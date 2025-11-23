@@ -1,6 +1,6 @@
-import { ModeToggle } from '../mode-toggle'
+import { ModeToggle } from '@/components/mode-toggle'
 
-export default function Header() {
+export default function CustomHeader() {
   return (
     <header className="w-full px-16 py-4 flex justify-center border-b">
       <div className="flex items-center justify-between w-full gap-4">

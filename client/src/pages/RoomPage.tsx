@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useSocket } from '../context/SocketContext'
-import type { Player } from '../types/player'
+import { useSocket } from '@/context/SocketContext'
+import type { Player } from '@/types/player'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { UnplugIcon, UserIcon, UserStarIcon } from 'lucide-react'
+import { toast } from 'sonner'
 
 const URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000'
 
@@ -22,11 +23,13 @@ export default function RoomPage() {
     fetch(`${URL}/api/rooms/${roomId}`)
       .then((res) => {
         if (!res.ok) {
-          console.error('Room does not exist, redirecting to home')
+          toast.error(`Room "${roomId}" does not exist`)
+          console.error(`Room "${roomId}" does not exist`)
           navigate('/')
         }
       })
       .catch((err) => {
+        toast.error('An unexpected error occurred, please try again later')
         console.error('Error checking room existence', err)
         navigate('/')
       })
@@ -39,6 +42,7 @@ export default function RoomPage() {
     })
 
     socket.on('room:error', ({ message }) => {
+      toast.error(message)
       console.error(message)
       navigate('/')
     })

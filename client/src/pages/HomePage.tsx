@@ -1,9 +1,10 @@
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { useSocket } from '../context/SocketContext'
+import { useSocket } from '@/context/SocketContext'
 import { Button } from '@/components/ui/button'
 import { REGEXP_ONLY_DIGITS_AND_CHARS } from 'input-otp'
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
+import { toast } from 'sonner'
 
 const URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000'
 
@@ -28,24 +29,26 @@ export default function HomePage() {
     socket.emit('room:create')
   }
 
-  const joinRoom = () => {
+  const joinRoom = (e: React.FormEvent) => {
+    e.preventDefault()
     fetch(`${URL}/api/rooms/${roomId}`)
       .then((res) => {
         if (res.ok) {
           navigate(`/${roomId}`)
         } else {
-          console.error('Room does not exist, redirecting to home')
+          toast.error(`Room "${roomId}" does not exist`)
         }
       })
       .catch((err) => {
+        toast.error('An unexpected error occurred, please try again later')
         console.error('Error checking room existence', err)
       })
   }
 
   return (
     <main className="flex flex-col gap-4 p-8 max-w-2xs mx-auto">
-      <div className="flex w-full items-center gap-2">
-        <InputOTP maxLength={4} value={roomId} onChange={(e) => setRoomId(e)} pattern={REGEXP_ONLY_DIGITS_AND_CHARS}>
+      <form className="flex w-full items-center gap-2" onSubmit={joinRoom}>
+        <InputOTP minLength={4} maxLength={4} required value={roomId} onChange={(e) => setRoomId(e)} pattern={REGEXP_ONLY_DIGITS_AND_CHARS}>
           <InputOTPGroup>
             <InputOTPSlot index={0} />
             <InputOTPSlot index={1} />
@@ -53,10 +56,10 @@ export default function HomePage() {
             <InputOTPSlot index={3} />
           </InputOTPGroup>
         </InputOTP>
-        <Button onClick={joinRoom} className="w-full" variant="outline">
+        <Button type="submit" className="w-full" variant="outline">
           Join
         </Button>
-      </div>
+      </form>
       <Button onClick={createRoom}>New room</Button>
     </main>
   )
