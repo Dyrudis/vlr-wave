@@ -2,8 +2,10 @@ import express from 'express'
 import http from 'http'
 import { Server as SocketIOServer } from 'socket.io'
 import cors from 'cors'
+import path from 'path'
 import { registerSocketEvents } from './socket'
 import { loadEnv } from './config/env'
+import apiRouter from './http/api'
 
 loadEnv()
 
@@ -12,7 +14,7 @@ app.use(cors())
 app.use(express.json())
 
 // Optional REST
-app.use('/api', require('./http/api'))
+app.use('/api', apiRouter)
 
 const server = http.createServer(app)
 
@@ -21,6 +23,7 @@ const io = new SocketIOServer(server, {
     origin: process.env.FRONTEND_URL,
     methods: ['GET', 'POST'],
   },
+  maxHttpBufferSize: 1e8, // 100 MB
 })
 
 // Register socket event handlers

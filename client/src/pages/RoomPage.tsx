@@ -6,14 +6,17 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { UnplugIcon, UserIcon, UserStarIcon } from 'lucide-react'
 import { toast } from 'sonner'
+import AudioPlayer from '@/components/legacy/AudioPlayer'
 
-const URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000'
+const URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000'
 
 export default function RoomPage() {
   const socket = useSocket()
   const params = useParams()
   const navigate = useNavigate()
   const [name, setName] = useState(() => localStorage.getItem('name') || '')
+  const [guess, setGuess] = useState('')
+  const [trackUrl, setTrackUrl] = useState<string | null>(null)
 
   const roomId = params.roomId as string
 
@@ -33,7 +36,9 @@ export default function RoomPage() {
         console.error('Error checking room existence', err)
         navigate('/')
       })
+  }, [])
 
+  useEffect(() => {
     if (!socket) return
 
     socket.on('room:update', (data) => {
@@ -44,7 +49,11 @@ export default function RoomPage() {
     socket.on('room:error', ({ message }) => {
       toast.error(message)
       console.error(message)
-      navigate('/')
+    })
+
+    socket.on('game:track', (test) => {
+      console.log('New track received', test)
+      setTrackUrl(test.trackUrl)
     })
 
     return () => {
@@ -65,11 +74,35 @@ export default function RoomPage() {
     navigate('/')
   }
 
+  const startGame = () => {
+    console.log('Starting game', roomId)
+    socket.emit('game:start', { roomId, playlist: 'valorant/maps', numberOfTracks: 5 })
+  }
+
+  const guessTrack = (e: React.FormEvent) => {
+    e.preventDefault()
+    console.log('Guessing track', guess)
+    socket.emit('game:guess', { roomId, guess })
+  }
+
   const isConnected = players.find((p) => p.name === name)?.isConnected
+  const isHost = players.find((p) => p.name === name)?.isHost
 
   return (
     <main className="flex flex-col gap-4 p-8 max-w-2xs mx-auto">
       <h1 className="text-2xl font-bold">Room: {roomId}</h1>
+
+      {trackUrl && (
+        <>
+          <AudioPlayer url={`${URL}${trackUrl}`} />
+          <form className="flex w-full items-center gap-2" onSubmit={guessTrack}>
+            <Input placeholder="Guess" value={guess} onChange={(e) => setGuess(e.target.value)} autoFocus />
+            <Button type="submit" variant={'outline'}>
+              Enter
+            </Button>
+          </form>
+        </>
+      )}
       {isConnected ? (
         <>
           <h2 className="text-md">Players list</h2>
@@ -89,7 +122,12 @@ export default function RoomPage() {
               </li>
             ))}
           </ul>
-          <Button onClick={leaveRoom} variant={'destructive'}>
+          {isHost ? (
+            <Button onClick={startGame}>Start Game</Button>
+          ) : (
+            <p className="text-sm">Waiting for host to start the game...</p>
+          )}
+          <Button onClick={leaveRoom} variant="destructive">
             Leave room
           </Button>
         </>

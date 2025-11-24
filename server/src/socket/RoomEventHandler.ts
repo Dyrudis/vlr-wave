@@ -182,11 +182,20 @@ export class RoomEventHandler {
   /**
    * Handle game start
    */
-  private handleGameStart({ roomId, track }: { roomId: string; track: string }): void {
+  private handleGameStart({
+    roomId,
+    playlist,
+    numberOfTracks,
+  }: {
+    roomId: string
+    playlist: string
+    numberOfTracks: number
+  }): void {
     logger.info('Game start requested', {
       socketId: this.socket.id,
       roomId,
-      track,
+      playlist,
+      numberOfTracks,
     })
 
     const room = this.roomStore.getRoom(roomId)
@@ -206,17 +215,24 @@ export class RoomEventHandler {
       return
     }
 
-    this.gameManager.startGame(room, track)
+    const playlistData = this.gameManager.getPlaylistByName(playlist)
+    if (!playlistData) {
+      logger.warn('Game start failed - playlist not found', { roomId, playlist })
+      this.socket.emit('room:error', { message: 'Playlist not found' })
+      return
+    }
+
+    this.gameManager.startGame(room, playlistData, numberOfTracks)
   }
 
   /**
    * Handle player guess
    */
-  private handleGameGuess({ roomId, guess }: { roomId: string; guess: { correct: boolean; answer?: string } }): void {
+  private handleGameGuess({ roomId, guess }: { roomId: string; guess: string }): void {
     logger.debug('Guess received', {
       socketId: this.socket.id,
       roomId,
-      correct: guess.correct,
+      guess,
     })
 
     const room = this.roomStore.getRoom(roomId)

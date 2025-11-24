@@ -1,0 +1,64 @@
+{
+  "title": "Valorant Maps",
+  "root": "valorant/maps/",
+  "tracks": [
+    {
+      "title": "Ascent",
+      "file": "ascent.mp3"
+    },
+    {
+      "title": "Bind",
+      "file": "bind.mp3"
+    },
+    {
+      "title": "Haven",
+      "file": "haven.mp3"
+    },
+    {
+      "title": "Split",
+      "file": "split.mp3"
+    },
+    {
+      "title": "Icebox",
+      "file": "icebox.mp3"
+    },
+    {
+      "title": "Breeze",
+      "file": "breeze.mp3"
+    },
+    {
+      "title": "Fracture",
+      "file": "fracture.mp3"
+    },
+    {
+      "title": "Pearl",
+      "file": "pearl.mp3"
+    },
+    {
+      "title": "Lotus",
+      "file": "lotus.mp3"
+    },
+    {
+      "title": "Sunset",
+      "file": "sunset.mp3"
+    },
+    {
+      "title": "Abyss",
+      "file": "abyss.mp3"
+    },
+    {
+      "title": "Corrode",
+      "file": "corrode.mp3"
+    },
+    {
+      "title": "The Range",
+      "file": "range.mp3",
+      "aliases": ["Range", "Practice", "Practice Range"]
+    },
+    {
+      "title": "Team Deathmatch",
+      "file": "tdm.mp3",
+      "aliases": ["TDM"]
+    }
+  ]
+}

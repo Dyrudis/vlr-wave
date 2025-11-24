@@ -1,5 +1,7 @@
 import { Server } from 'socket.io'
 import Logger from '../utils/logger'
+import { getTrackId } from '../http/api'
+import Queue from '../utils/queue'
 
 const logger = new Logger('GameManager')
 
@@ -16,29 +18,51 @@ export class GameManager {
   /**
    * Start a game round with a new track
    */
-  startGame(room: Room, track: string): void {
-    room.currentTrack = track
+  async startGame(room: Room, playlist: Playlist, numberOfTracks: number): Promise<void> {
+    // Create a random queue of tracks from the playlist
+    const queue = new Queue(playlist, numberOfTracks)
 
-    logger.info('Game started', {
+    while (queue.hasNext()) {
+      const track = queue.nextTrack()
+      if (track) {
+        await this.playTrack(room, track)
+      }
+    }
+
+    logger.info('No more tracks to play', { roomId: room.id })
+  }
+
+  /**
+   * Play a specific track in the room
+   */
+  private async playTrack(room: Room, track: track): Promise<void> {
+    // Generate obfuscated ID for the track
+    const trackId = getTrackId(track.file)
+    const trackUrl = `/api/track/${trackId}`
+
+    room.currentTrack = track.title
+
+    logger.info('Playing track', {
       roomId: room.id,
-      track,
       playerCount: room.players.size,
+      track: track.title,
     })
 
     this.io.to(room.id).emit('game:track', {
-      track,
+      trackUrl,
       timestamp: Date.now(),
     })
+
+    // Wait 15 seconds
+    await new Promise((resolve) => setTimeout(resolve, 15000))
+
+    return
   }
 
   /**
    * Process a player's guess
    */
-  processGuess(
-    room: Room,
-    playerId: string,
-    guess: { correct: boolean; answer?: string }
-  ): { player: Player; scoreChange: number } | undefined {
+  processGuess(room: Room, playerId: string, guess: string): { player: Player; scoreChange: number } | undefined {
     const player = room.players.get(playerId)
     if (!player) {
       logger.warn('Guess from non-existent player', {
@@ -48,8 +72,12 @@ export class GameManager {
       return undefined
     }
 
+    const correctAnswer = room.currentTrack || ''
+    // 80% match required
+    const isCorrect = guess.trim().toLowerCase() === correctAnswer.trim().toLowerCase()
+
     // Calculate score change
-    const scoreChange = guess.correct ? 10 : 0
+    const scoreChange = isCorrect ? 10 : 0
     player.score += scoreChange
 
     room.players.set(playerId, player)
@@ -58,8 +86,8 @@ export class GameManager {
       roomId: room.id,
       playerId,
       playerName: player.name,
-      correct: guess.correct,
-      answer: guess.answer,
+      guess,
+      correct: isCorrect,
       scoreChange,
       newScore: player.score,
     })
@@ -120,5 +148,15 @@ export class GameManager {
     }
 
     return state
+  }
+
+  /**
+   * Get playlist by name
+   * @param name Playlist name
+   * @returns Playlist or undefined
+   */
+  getPlaylistByName(name: string): Playlist | undefined {
+    const playlist = require(`../../playlists/${name}`) as Playlist
+    return playlist
   }
 }
